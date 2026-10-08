@@ -340,25 +340,8 @@
     /* ===================================================================
      UI HELPERS
      =================================================================== */
-  var INTRO_KEY = 'motorInsuranceIntroSeen';
-  var ICON = {
-    dash: '<rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/>',
-    users: '<circle cx="9" cy="8" r="4"/><path d="M2 21c0-4 3-6 7-6s7 2 7 6M17 4a4 4 0 0 1 0 8M22 21c0-3-2-5-5-5.5"/>',
-    plus: '<path d="M12 5v14M5 12h14"/>',
-    file: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/>',
-    check: '<circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/>',
-    shield: '<path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"/><path d="m9 12 2 2 4-4"/>',
-    bell: '<path d="M6 8a6 6 0 0 1 12 0c0 7 3 8 3 8H3s3-1 3-8M10 20a2 2 0 0 0 4 0"/>',
-    search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
-    car: '<path d="M3 17h18M4 13l2-6h12l2 6v4H4zM7 17v2M17 17v2"/>',
-    back: '<path d="m15 18-6-6 6-6"/>',
-    chev: '<path d="m9 6 6 6-6 6"/>',
-    alert: '<path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17v.01"/>',
-    pct: '<path d="M19 5 5 19"/><circle cx="7" cy="7" r="2"/><circle cx="17" cy="17" r="2"/>',
-    coin: '<circle cx="12" cy="12" r="9"/><path d="M9 8h6M9 11h6M9 8c4 0 4 5 0 5l5 4"/>',
-    user: '<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/>'
-  };
-  function ic(n) { return '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + ICON[n] + '</svg>'; }
+  // Icons are image files: assets/icons/<name>.png (dark, transparent). White versions use a CSS filter.
+  function ic(n, white, cls) { return '<img class="icon' + (white ? ' icon--white' : '') + (cls ? ' ' + cls : '') + '" src="assets/icons/' + n + '.png" alt="">'; }
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function avatar(name, big) {
     var h = 0; for (var i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) % 360;
@@ -392,42 +375,57 @@
   var COV_COLOR = { 'Comprehensive': '#1d5eff', 'Limited': '#16b364', 'Third party': '#f59e0b' };
 
   function donut(items, total, label) {
-    var cum = 0, segs = '', leg = '';
-    items.forEach(function (it, i) {
+    var cum = 0, stops = [], leg = '';
+    items.forEach(function (it) {
       var pct = total ? it.value / total * 100 : 0;
-      if (pct > 0) segs += '<circle class="donut__seg" cx="50" cy="50" r="38" pathLength="100" stroke="' + it.color + '" stroke-dasharray="' + Math.max(pct - 1, 0.1) + ' ' + (100 - pct + 1) + '" stroke-dashoffset="' + (-cum) + '" style="animation-delay:' + (i * 120) + 'ms"/>';
+      if (pct > 0) stops.push(it.color + ' ' + cum + '% ' + (cum + pct) + '%');
       cum += pct;
       leg += '<div class="legend__row"><span class="legend__dot" style="--c:' + it.color + '"></span>' + it.label + '<span class="legend__pct">' + Math.round(pct) + '%</span></div>';
     });
-    return '<div class="donut"><div class="donut__wrap"><svg class="donut__svg" viewBox="0 0 100 100"><circle class="donut__ring" cx="50" cy="50" r="38"/>' + segs + '</svg>' +
-      '<div class="donut__center"><b>' + total + '</b>' + label + '</div></div><div class="legend">' + leg + '</div></div>';
+    if (!stops.length) stops.push('#eef2fb 0% 100%');
+    return '<div class="donut"><div class="donut__wrap"><div class="donut__ring" style="background:conic-gradient(' + stops.join(',') + ')"></div><div class="donut__hole"><b>' + total + '</b>' + label + '</div></div><div class="legend">' + leg + '</div></div>';
+  }
+  function ring(pct, color, big, small) {
+    return '<div class="donut__wrap"><div class="donut__ring" style="background:conic-gradient(' + color + ' 0% ' + pct + '%,#eef2fb ' + pct + '% 100%)"></div><div class="donut__hole"><b>' + big + '</b>' + small + '</div></div>';
   }
 
-  function lineChart(labels, series) {
-    var W = 420, H = 210, L = 32, R = 10, T = 12, B = 28, pw = W - L - R, ph = H - T - B;
+  var lineData = null, lineToken = 0;
+  function lineChart(labels, series) { lineData = { labels: labels, series: series }; return '<canvas class="line__canvas" id="line-canvas"></canvas>'; }
+  function paintLine(animate) {
+    var cv = $('line-canvas'); if (!cv || !lineData) return;
+    var token = ++lineToken, dpr = window.devicePixelRatio || 1, W = cv.clientWidth || 420, H = 210;
+    cv.width = W * dpr; cv.height = H * dpr;
+    var g = cv.getContext('2d'); g.scale(dpr, dpr);
+    var labels = lineData.labels, series = lineData.series, L = 32, R = 10, T = 12, B = 28, pw = W - L - R, ph = H - T - B, t0 = null;
     var mx = Math.ceil(Math.max.apply(null, [4].concat(series[0].v)) / 4) * 4;
     function x(i) { return L + pw * i / (labels.length - 1); }
     function y(v) { return T + ph - ph * v / mx; }
-    var s = '<svg class="line__svg" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Claims trend">';
-    for (var g = 0; g <= 4; g++) {
-      var gy = T + ph * g / 4;
-      s += '<line class="line__grid" x1="' + L + '" x2="' + (W - R) + '" y1="' + gy + '" y2="' + gy + '"/><text class="line__txt" x="' + (L - 6) + '" y="' + (gy + 3) + '" text-anchor="end">' + Math.round(mx - mx * g / 4) + '</text>';
-    }
-    labels.forEach(function (l, i) { s += '<text class="line__txt" x="' + x(i) + '" y="' + (H - 8) + '" text-anchor="middle">' + l + '</text>'; });
-    series.forEach(function (se, k) {
-      var d = se.v.map(function (v, i) {
-        if (!i) return 'M' + x(0) + ',' + y(v);
-        var mid = (x(i - 1) + x(i)) / 2;
-        return 'C' + mid + ',' + y(se.v[i - 1]) + ' ' + mid + ',' + y(v) + ' ' + x(i) + ',' + y(v);
-      }).join('');
-      if (k === 0) s += '<path class="line__area" d="' + d + 'L' + x(labels.length - 1) + ',' + (T + ph) + 'L' + x(0) + ',' + (T + ph) + 'Z" fill="' + se.c + '" fill-opacity=".1"/>';
-      s += '<path class="line__path" pathLength="1" d="' + d + '" stroke="' + se.c + '"/>';
+    function trace(se) {
+      g.beginPath();
       se.v.forEach(function (v, i) {
-        s += '<circle cx="' + x(i) + '" cy="' + y(v) + '" r="3.5" fill="#fff" stroke="' + se.c + '" stroke-width="2"><title>' + se.n + ' · ' + labels[i] + ': ' + v + '</title></circle>';
+        if (!i) { g.moveTo(x(0), y(v)); return; }
+        var m = (x(i - 1) + x(i)) / 2; g.bezierCurveTo(m, y(se.v[i - 1]), m, y(v), x(i), y(v));
       });
-    });
-    return s + '</svg>';
+    }
+    function frame(t) {
+      if (token !== lineToken) return;
+      if (t0 === null) t0 = t;
+      var p = animate ? Math.min(1, (t - t0) / 1100) : 1; p = 1 - Math.pow(1 - p, 3);
+      g.clearRect(0, 0, W, H); g.font = '10px sans-serif'; g.fillStyle = '#7a89ad'; g.strokeStyle = '#e7edf8'; g.lineWidth = 1;
+      for (var k = 0; k <= 4; k++) { var gy = T + ph * k / 4; g.beginPath(); g.moveTo(L, gy); g.lineTo(W - R, gy); g.stroke(); g.textAlign = 'right'; g.fillText(Math.round(mx - mx * k / 4), L - 6, gy + 3); }
+      g.textAlign = 'center'; labels.forEach(function (l, i) { g.fillText(l, x(i), H - 8); });
+      g.save(); g.beginPath(); g.rect(0, 0, L + pw * p + 4, H); g.clip();
+      series.forEach(function (se, k) {
+        if (k === 0) { trace(se); g.lineTo(x(labels.length - 1), T + ph); g.lineTo(x(0), T + ph); g.closePath(); g.fillStyle = 'rgba(29,94,255,.1)'; g.fill(); }
+        trace(se); g.strokeStyle = se.c; g.lineWidth = 2.5; g.lineCap = 'round'; g.stroke();
+        se.v.forEach(function (v, i) { g.beginPath(); g.arc(x(i), y(v), 3.5, 0, 6.2832); g.fillStyle = '#fff'; g.fill(); g.lineWidth = 2; g.stroke(); });
+      });
+      g.restore();
+      if (p < 1) requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
   }
+  window.addEventListener('resize', function () { paintLine(false); });
 
   function bars(items, fmt) {
     var mx = Math.max.apply(null, [1].concat(items.map(function (i) { return i.value; })));
@@ -436,20 +434,15 @@
     }).join('') + '</div>';
   }
 
-  var SCENE = '<svg class="hero__scene" viewBox="0 0 600 200" preserveAspectRatio="xMaxYMax slice" aria-hidden="true"><defs><linearGradient id="sun" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd089"/><stop offset="1" stop-color="#e0703f" stop-opacity="0"/></linearGradient></defs>' +
-    '<circle cx="470" cy="115" r="70" fill="url(#sun)" opacity=".8"/><path d="M0 200v-60l90-50 70 40 80-70 90 80 100-50 170 70v40z" fill="#0f2a63" opacity=".7"/>' +
-    '<path d="M180 200 330 135h70l200 65z" fill="#141c38"/><path d="M345 200l30-65" stroke="#f5c26b" stroke-width="2" stroke-dasharray="8 8"/>' +
-    '<g fill="#080e20"><rect x="400" y="135" width="96" height="28" rx="10"/><path d="M416 135l14-18h46l14 18z"/><circle cx="425" cy="165" r="10"/><circle cx="476" cy="165" r="10"/></g></svg>';
-
   /* ===================================================================
      CHROME (sidebar, top bar, tab bar)
      =================================================================== */
   var NAV = [['dashboard', 'dash', 'Dashboard'], ['customer', 'users', 'Customer'], ['new', 'plus', 'New Entry']];
 
   function buildChrome() {
-    $('side-nav').innerHTML = NAV.map(function (n) { return '<a class="nav__link" href="#/' + n[0] + '" data-nav="' + n[0] + '">' + ic(n[1]) + '<span>' + n[2] + '</span></a>'; }).join('');
-    $('tabbar').innerHTML = NAV.map(function (n) { return '<a class="tabbar__link" href="#/' + n[0] + '" data-nav="' + n[0] + '">' + ic(n[1]) + '<span>' + n[2] + '</span></a>'; }).join('');
-    $('side-foot').innerHTML = '<span class="side__car">' + ic('car') + '</span><span>Drive Safe<br>Stay Covered</span>';
+    $('side-nav').innerHTML = NAV.map(function (n) { return '<a class="nav__link" href="#/' + n[0] + '" data-nav="' + n[0] + '">' + ic(n[1], true) + '<span>' + n[2] + '</span></a>'; }).join('');
+    $('tabbar').innerHTML = NAV.map(function (n) { return '<a class="tabbar__link" href="#/' + n[0] + '" data-nav="' + n[0] + '">' + ic(n[1], true) + '<span>' + n[2] + '</span></a>'; }).join('');
+    $('side-foot').innerHTML = '<span class="side__car">' + ic('car', true) + '</span><span>Drive Safe<br>Stay Covered</span>';
     $('global-search-box').innerHTML = ic('search') + '<input class="search__input" id="global-search" placeholder="Search customers, policies, vehicles..." autocomplete="off">';
     $('top-right').innerHTML = '<button type="button" class="bell" aria-label="Notifications">' + ic('bell') + '<span class="bell__dot"></span></button><div class="user">' + avatar('User Desk') + '<span class="user__name">User</span></div>';
 
@@ -475,31 +468,81 @@
     });
   }
 
+  function greet() { var h = new Date().getHours(); return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'; }
+
+  function actionsHtml() {
+    var A = [['quote', 'plus', 'Get a Quote', true], ['renew', 'shield', 'Renew Policy'], ['track', 'alert', 'Track Claim'], ['docs', 'file', 'Documents']];
+    return '<div class="actions reveal" style="--i:2">' + A.map(function (a) {
+      return '<button type="button" class="action' + (a[3] ? ' action--primary' : '') + '" data-act="' + a[0] + '">' + ic(a[1], !!a[3]) + '<span>' + a[2] + '</span>' + ic('chev', !!a[3], 'btn__arrow') + '</button>';
+    }).join('') + '</div>';
+  }
+
+  function drawSpot(pols) {
+    var box = slot('spot'), today = startOfDay(new Date());
+    var act = pols.filter(by('status', 'Active')).sort(function (a, b) { return a.end.localeCompare(b.end); });
+    if (!act.length) { box.innerHTML = '<section class="card reveal spot__wide"><h2 class="card__title">No active policies</h2><p class="helper">There is nothing active for this coverage filter.</p></section>'; return; }
+    var p = act[0], c = customerOf(p), left = Math.max(0, Math.ceil((fromIso(p.end) - today) / 864e5));
+    var used = Math.min(100, Math.max(0, Math.round(100 - left / 365 * 100)));
+    var open = claimsOfPolicies([p]).filter(by('status', 'Open')).length;
+    var health = Math.min(100, 50 + { 'Comprehensive': 25, 'Limited': 15, 'Third party': 8 }[p.coverage] + (open ? 0 : 15) + (left > 60 ? 10 : 0));
+    var checks = [[true, p.coverage + ' coverage'], [!open, open ? open + ' open claim(s)' : 'No open claims'], [left > 60, 'Renewal in ' + left + ' days']];
+    box.innerHTML =
+      '<section class="card card--lift spot__main reveal" style="--i:3"><div class="spot__text"><p class="spot__hi">You\u2019re covered.</p>' +
+      '<h2 class="spot__car">' + esc(p.make + ' ' + p.model + ' ' + p.year) + '</h2><p class="spot__sub">' + p.coverage + ' insurance \u00b7 ' + esc(c.name) + '</p>' +
+      '<div class="spot__meta"><div><span class="spot__k">Policy ID</span>' + p.id + '</div><div><span class="spot__k">Valid until</span>' + dmy(p.end) + '</div><div><span class="spot__k">Plate</span>' + p.plate + '</div></div>' +
+      '<div class="spot__bar"><span class="spot__fill" style="--w:' + used + '%"></span></div><p class="spot__sub">Policy term ' + used + '% complete \u00b7 expires in ' + left + ' days</p>' +
+      '<button type="button" class="btn btn--primary" id="view-policy">View Policy' + ic('chev', true, 'btn__arrow') + '</button></div>' +
+      '<img class="spot__img" src="assets/car-sedan.png" alt=""></section>' +
+      '<section class="card card--lift reveal" style="--i:4"><h2 class="card__title">Policy health</h2><div class="health">' + ring(health, '#16b364', health + '%', 'Protected') +
+      '<ul class="health__list">' + checks.map(function (k) { return '<li class="health__item' + (k[0] ? '' : ' is-warn') + '">' + (k[0] ? '\u2713' : '!') + ' ' + k[1] + '</li>'; }).join('') + '</ul></div></section>';
+    on('view-policy', 'click', function () { state.customerId = c.id; go('customer'); });
+  }
+
+  function tracker(cl) {
+    var steps = ['Submitted', 'Documents verified', 'Assessment', 'Approved', 'Settlement'];
+    var done = cl.status === 'Open' ? 2 : cl.status === 'Approved' ? 4 : 3, rej = cl.status === 'Rejected';
+    if (rej) steps[3] = 'Rejected';
+    return '<div class="track"><div class="track__line"><span class="track__fill" style="--w:' + (done / (steps.length - 1) * 100) + '%"></span></div>' +
+      steps.map(function (s, i) {
+        return '<div class="track__step' + (i < done ? ' is-done' : i === done ? ' is-now' : '') + (rej && i === 3 ? ' is-bad' : '') + '"><span class="track__dot">' + (i < done ? '\u2713' : '') + '</span>' + s + '</div>';
+      }).join('') + '</div>';
+  }
+
   /* ===================================================================
      PAGE 1 · DASHBOARD
      =================================================================== */
   var dash = { coverage: 'All', search: '' };
-  var state = { customerId: null, newFor: null, flash: null };
+  var state = { customerId: null, newFor: null, flash: null, tab: null };
 
   function pageDashboard() {
     setPage('dashboard');
     var covs = ['All'].concat(COVERAGES);
     $content.innerHTML =
-      '<section class="hero reveal">' + SCENE + '<div class="hero__tag">Better Coverage<br>for a Safer Tomorrow</div><h1 class="hero__title">Motor Insurance Desk</h1><p class="hero__sub">Smarter coverage. Safer journeys.</p><p class="hero__text">Manage policies, claims and customers — all in one place.</p></section>' +
+      '<section class="hero reveal"><div class="hero__tag">Better Coverage<br>for a Safer Tomorrow</div><p class="hero__hello">' + greet() + ', User</p><h1 class="hero__title">Motor Insurance Desk</h1><p class="hero__sub">Smarter coverage. Safer journeys.</p><p class="hero__text">Manage policies, claims and customers — all in one place.</p></section>' +
       '<div class="filter reveal" style="--i:1"><span class="filter__label">Coverage:</span>' + covs.map(function (c) { return '<button type="button" class="chip" data-cov="' + c + '">' + c + '</button>'; }).join('') + '</div>' +
-      '<div class="kpis" data-slot="kpis"></div><div class="grid3" data-slot="charts"></div>' +
+      actionsHtml() + '<div class="spot" data-slot="spot"></div><div class="kpis" data-slot="kpis"></div><div class="grid3" data-slot="charts"></div>' +
       '<section class="card reveal" style="--i:5;margin-top:14px"><div class="tools"><h2 class="tools__title">Customers</h2>' +
       '<label class="search" style="max-width:280px">' + ic('search') + '<input class="search__input" id="search" placeholder="Search name or plate..." autocomplete="off"></label>' +
       '<div class="tools__spacer">Coverage<select class="input input--sm" id="cov-select">' + covs.map(function (c) { return '<option>' + c + '</option>'; }).join('') + '</select></div></div>' +
       '<div class="table-wrap"><table class="table">' + th(['Customer', 'City', 'Policies', 'Vehicles', 'Annual premium', 'Claims', 'Open claims', 'Status']) + '<tbody data-slot="customers"></tbody></table></div>' +
       '<p class="helper">Select a customer name to open their policies and claims.</p>' +
-      '<div class="btnrow"><button type="button" class="btn" id="reset-data">Reset demo data</button><button type="button" class="btn btn--primary" id="new-entry">' + ic('plus') + 'New entry</button></div></section>';
+      '<div class="btnrow"><button type="button" class="btn" id="reset-data">Reset demo data</button><button type="button" class="btn btn--primary" id="new-entry">' + ic('plus', true) + 'New entry</button></div></section>';
 
     $('search').value = dash.search;
     on('search', 'input', function (e) { dash.search = e.target.value.trim().toLowerCase(); var g = $('global-search'); if (g) g.value = e.target.value; drawCustomers(); });
     on('cov-select', 'change', function (e) { setCov(e.target.value); });
     Array.prototype.forEach.call($content.querySelectorAll('[data-cov]'), function (b) { b.addEventListener('click', function () { setCov(b.getAttribute('data-cov')); }); });
     on('new-entry', 'click', function () { state.newFor = null; go('new'); });
+    $content.querySelector('.actions').addEventListener('click', function (e) {
+      var b = e.target.closest('[data-act]'); if (!b) return;
+      var a = b.getAttribute('data-act');
+      if (a === 'quote' || a === 'renew') { state.newFor = null; go('new'); }
+      else if (a === 'track') {
+        var cl = db.claims.filter(by('status', 'Open'))[0];
+        if (!cl) { toast('There are no open claims to track.'); return; }
+        state.customerId = customerOf(policyOf(cl)).id; state.tab = 'claims'; go('customer');
+      } else toast('Document downloads will be available soon.');
+    });
     on('reset-data', 'click', function () {
       store.reset(); dash.coverage = 'All'; dash.search = ''; state.customerId = null;
       state.flash = 'Demo data has been reset.'; render('dashboard', true);
@@ -540,6 +583,7 @@
     }).join('');
     countUp(slot('kpis'));
 
+    drawSpot(pols);
     var cov = COVERAGES.map(function (c) { return { label: c, value: pols.filter(by('coverage', c)).length, color: COV_COLOR[c] }; });
     var months = last12Months().slice(6);
     var tot = months.map(function (m) { return claims.filter(function (c) { return c.date.slice(0, 7) === m.key; }).length; });
@@ -552,6 +596,7 @@
       '<section class="card card--lift reveal" style="--i:' + (delay + 4) + '"><div class="cardhead"><h2 class="card__title">Claims Trend</h2><div class="legend legend--inline"><span class="legend__row"><span class="legend__dot" style="--c:#1d5eff"></span>Total claims</span><span class="legend__row"><span class="legend__dot" style="--c:#16b364"></span>Approved</span></div></div>' +
       lineChart(months.map(function (m) { return m.label.split(' ')[0]; }), [{ n: 'Total claims', c: '#1d5eff', v: tot }, { n: 'Approved', c: '#16b364', v: apr }]) + '</section>' +
       '<section class="card card--lift reveal" style="--i:' + (delay + 5) + '"><h2 class="card__title">Premium by Vehicle Type</h2>' + bars(types, compact) + '</section>';
+    paintLine(true);
     drawCustomers();
   }
 
@@ -595,6 +640,7 @@
       '<div class="tabs reveal" style="--i:2"><button type="button" class="tab is-active" data-tab="overview">Overview</button><button type="button" class="tab" data-tab="policies">Policies</button><button type="button" class="tab" data-tab="claims">Claims</button></div>' +
       '<div class="grid2 reveal" data-pane="overview" style="--i:3"><section class="card"><h2 class="card__title">Policy coverage</h2>' + donut(covItems, pols.length, 'Policies') + '</section>' +
       '<section class="card"><h2 class="card__title">Claims status</h2>' + bars(clItems, String) + '</section></div>' +
+      (claims.length ? '<section class="card reveal" data-pane="overview claims" style="--i:4;margin-bottom:14px"><h2 class="card__title">Claim tracking \u00b7 ' + claims[0].id + '</h2>' + tracker(claims[0]) + '</section>' : '') +
       '<section class="card reveal" data-pane="overview policies" style="--i:4;margin-bottom:14px"><h2 class="card__title">Policies</h2><div class="table-wrap"><table class="table">' +
       th(['Policy', 'Vehicle', 'Plate', 'Coverage', 'Insured value', 'Premium', 'Start', 'End', 'Status']) + '<tbody>' +
       (pols.length ? pols.map(function (p, i) { return '<tr class="table__row" style="--i:' + i + '">' + td(p.id) + td(p.make + ' ' + p.model + ' ' + p.year) + td(p.plate) + td(p.coverage) + td(money(p.value)) + td(money(p.premium)) + td(dmy(p.start)) + td(dmy(p.end)) + td(pill(p.status)) + '</tr>'; }).join('') : '<tr><td class="pf-msg-empty" colspan="9">No policies.</td></tr>') +
@@ -605,7 +651,7 @@
         var act = x.status === 'Open' ? '<a class="link" href="#" data-claim="' + x.id + '" data-set="Approved">Approve</a> · <a class="link link--bad" href="#" data-claim="' + x.id + '" data-set="Rejected">Reject</a>' : '—';
         return '<tr class="table__row" style="--i:' + i + '">' + td(x.id) + td(x.policyId) + td(dmy(x.date)) + td(x.type) + td(money(x.amount)) + td(pill(x.status)) + td(act) + '</tr>';
       }).join('') : '<tr><td class="pf-msg-empty" colspan="7">No claims.</td></tr>') + '</tbody></table></div></section>' +
-      '<div class="btnrow"><button type="button" class="btn" id="back">Dashboard</button><button type="button" class="btn btn--primary" id="new-entry">' + ic('plus') + 'New entry</button></div>';
+      '<div class="btnrow"><button type="button" class="btn" id="back">Dashboard</button><button type="button" class="btn btn--primary" id="new-entry">' + ic('plus', true) + 'New entry</button></div>';
 
     Array.prototype.forEach.call($content.querySelectorAll('[data-tab]'), function (t) {
       t.addEventListener('click', function () {
@@ -622,6 +668,7 @@
         state.flash = 'Claim ' + cl.id + ' marked as ' + cl.status + '.'; render('customer', true);
       });
     });
+    if (state.tab) { var tb = $content.querySelector('[data-tab="' + state.tab + '"]'); state.tab = null; if (tb) tb.click(); }
     on('back', 'click', function () { go('dashboard'); });
     on('new-entry', 'click', function () { state.newFor = c.id; go('new'); });
   }
@@ -636,14 +683,14 @@
   function pageNew() {
     setPage('new');
     function choice(id, val, icon, title, sub, on) {
-      return '<div><input class="choice__input" type="radio" name="entry-type" id="' + id + '" value="' + val + '"' + (on ? ' checked' : '') + '><label class="choice__card" for="' + id + '"><span class="choice__icon">' + ic(icon) + '</span><span><span class="choice__title">' + title + '</span><br><span class="choice__sub">' + sub + '</span></span></label></div>';
+      return '<div><input class="choice__input" type="radio" name="entry-type" id="' + id + '" value="' + val + '"' + (on ? ' checked' : '') + '><label class="choice__card" for="' + id + '"><span class="choice__icon">' + ic(icon, true) + '</span><span><span class="choice__title">' + title + '</span><br><span class="choice__sub">' + sub + '</span></span></label></div>';
     }
     $content.innerHTML =
       '<a class="back reveal" href="#/dashboard" data-nav="dashboard">' + ic('back') + 'Back to Dashboard</a><h1 class="page-title reveal">New Entry</h1><p class="helper reveal" style="margin-top:-8px">Add a new policy or claim for a customer.</p>' +
       '<div data-slot="banner"></div>' +
       '<div class="choice reveal" style="--i:1">' + choice('type-policy', 'policy', 'file', 'Add Policy', 'Create a new policy for an existing or new customer', true) + choice('type-claim', 'claim', 'alert', 'Add Claim', 'Register a claim for an existing policy', false) + '</div>' +
       '<section class="card reveal" style="--i:2"><div class="form" data-slot="form"></div><div data-slot="field-msg"></div>' +
-      '<div class="btnrow"><button type="button" class="btn" id="cancel">Cancel</button><button type="button" class="btn btn--primary" id="save">Save' + ic('chev') + '</button></div></section>';
+      '<div class="btnrow"><button type="button" class="btn" id="cancel">Cancel</button><button type="button" class="btn btn--primary" id="save">Save' + ic('chev', true, 'btn__arrow') + '</button></div></section>';
     Array.prototype.forEach.call($content.querySelectorAll('input[name="entry-type"]'), function (r) { r.addEventListener('change', drawForm); });
     on('cancel', 'click', function () { state.newFor ? go('customer') : go('dashboard'); });
     on('save', 'click', function () { $('type-policy').checked ? savePolicy() : saveClaim(); });
@@ -689,13 +736,10 @@
   }
   window.addEventListener('popstate', function () { render(hashName(), true); });
 
-  // Dev helper: run resetIntro() in the console (or localStorage.removeItem('motorInsuranceIntroSeen')) and reload.
-  window.resetIntro = function () { try { localStorage.removeItem(INTRO_KEY); } catch (e) {} location.reload(); };
-
   function runIntro(done) {
     var root = document.documentElement, splash = $('splash');
-    if (!root.classList.contains('intro-on')) { splash.remove(); done(); return; }
-    try { localStorage.setItem(INTRO_KEY, '1'); } catch (e) {}
+    var calm = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (calm) { splash.remove(); root.classList.remove('intro-on'); done(); return; }
     setTimeout(function () { splash.classList.add('is-leaving'); root.classList.remove('intro-on'); done(); }, 1700);
     setTimeout(function () { splash.remove(); }, 2300);
   }
