@@ -24,8 +24,7 @@
     </h1>
     <p class="splash__sub">Smarter coverage. Safer journeys.</p>
     <div class="splash__bar"><span class="splash__fill"></span></div>
-    <!-- dots are added by CSS (.splash__hint::after) -->
-    <p class="splash__hint">Preparing your insurance desk</p>
+    <p class="splash__hint">Preparing your insurance desk...</p>
   </div>
 </div>
 
@@ -55,10 +54,10 @@
 <script>
   /* If app.js never started, show a clear message instead of a blank page. */
   setTimeout(function () {
-    if (window.__deskReady || document.getElementById('side-nav').children.length) return;
+    if (window.__deskReady) return;
     document.documentElement.classList.remove('intro-on');
     var s = document.getElementById('splash'); if (s) s.remove();
-    document.getElementById('content').innerHTML = '<div class="loadfail"><b>app.js could not be loaded.</b><br>Keep motor-insurance-desk.html, styles.css and app.js in the same folder, with the images folder next to them (images/logo.png, images/cars/hyundai-i20.webp, images/icons/...). File names are case-sensitive on GitHub Pages.</div>';
+    document.getElementById('content').innerHTML = '<div class="loadfail"><b>app.js could not be loaded.</b><br>Keep motor-insurance-desk.html, styles.css and app.js in the same folder, with the images folder next to them (images/logo.png, images/icons/...). File names are case-sensitive on GitHub Pages.</div>';
   }, 3500);
 </script>
 </body>
