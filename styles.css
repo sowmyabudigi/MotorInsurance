@@ -272,122 +272,175 @@ body{background:radial-gradient(1100px 500px at 90% -10%,#dbe7ff,transparent),ra
 @media (max-width:860px){.top{flex-wrap:wrap}.search{order:3;flex:1 1 100%;max-width:none}}
 
 /* =====================================================================
-   APPENDED: HIDDEN SCROLLBARS + MOBILE RESPONSIVENESS FIXES
-   (nothing above this line was changed — all original rules are intact)
+   APPENDED v2: INVISIBLE SCROLLBARS (ALL SCREENS) + FIXED BOTTOM NAV,
+   STICKY TOP HEADER & MOBILE/TABLET ALIGNMENT FIXES
+   (every original rule above is untouched — these overrides come last)
    ===================================================================== */
 
-/* ---------- 1 · Hide every scrollbar (scrolling still works) ---------- */
-*, *::before, *::after {
-  scrollbar-width: none;       /* Firefox */
-  -ms-overflow-style: none;    /* legacy Edge / IE */
-}
-*::-webkit-scrollbar {
-  width: 0;
-  height: 0;
-  display: none;               /* Chrome / Safari / Edge / Opera */
-}
-
-/* ---------- 2 · Global mobile guards ---------- */
-html, body {
-  overflow-x: hidden;          /* fallback for old browsers */
-  overflow-x: clip;            /* better: does not break position:sticky */
-}
+/* ---------- 1 · Invisible scrollbars on EVERY screen — scrolling still works ---------- */
 html {
-  -webkit-text-size-adjust: 100%;
-  text-size-adjust: 100%;
+  scrollbar-width: none;            /* Firefox */
+  -ms-overflow-style: none;         /* legacy Edge / IE */
+  overflow-x: hidden;               /* no sideways page drift (safe for fixed/sticky) */
 }
-button, .chip, .action, .tab, .tabbar__link, .nav__link { touch-action: manipulation; }
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  width: 0; height: 0; display: none;   /* Chrome / Safari / Edge / Opera */
+}
+*, *::before, *::after {
+  scrollbar-width: none;            /* Firefox — every scrollable element */
+  -ms-overflow-style: none;
+}
+*::-webkit-scrollbar,
+*::-webkit-scrollbar-thumb,
+*::-webkit-scrollbar-track,
+*::-webkit-scrollbar-corner {
+  width: 0; height: 0; display: none;   /* every scrollable element, all engines */
+}
+
+/* ---------- 2 · Touch & layout guards ---------- */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+button, a, .chip, .action, .tab, .table__row.is-click {
+  touch-action: manipulation;               /* no double-tap zoom delay */
+  -webkit-tap-highlight-color: transparent; /* no grey tap flash */
+}
 .table-wrap, .tabs, .filter {
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;        /* momentum scrolling */
+  overscroll-behavior-x: contain;           /* swiping a table won't drag the page */
 }
+@supports (min-height: 100dvh) { .app { min-height: 100dvh; } }
 
-/* real (dynamic) viewport height — stops layout jump when mobile URL bar hides */
-@supports (min-height: 100dvh) {
-  .app { min-height: 100dvh; }
-}
-
-/* touch feedback where hover does not exist */
+/* touch feedback where there is no hover */
 @media (hover:none) {
   .chip:active { transform: scale(.96); }
   .table__row.is-click:active { background: #eef4ff; }
+  .action:active { transform: scale(.97); }
+  .tabbar__link:active { transform: scale(.94); }
 }
 
-/* ---------- 3 · Phones & small tablets (≤ 860px) ---------- */
+/* ---------- 3 · FIXED, ALWAYS-VISIBLE BOTTOM NAV (mobile + tablet) ---------- */
 @media (max-width:860px) {
-  /* iOS zooms the whole page when focusing an input smaller than 16px */
-  .input, .search__input { font-size: 16px; }
+  .tabbar {
+    left: 0; right: 0; bottom: 0;             /* pinned edge-to-edge */
+    border-radius: 18px 18px 0 0;
+    padding: 6px 10px calc(8px + env(safe-area-inset-bottom, 0px));
+    background: rgba(10, 26, 68, .92);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+    border-top: 1px solid rgba(255, 255, 255, .08);
+    box-shadow: 0 -10px 30px rgba(10, 26, 68, .28);
+  }
+  .tabbar__link {
+    min-height: 50px;                          /* thumb-friendly tap target */
+    padding: 8px 6px;
+    align-content: center;
+    border-radius: 14px;
+    transition: background .25s var(--ease), color .25s var(--ease), transform .25s var(--ease);
+  }
+  .tabbar__link .icon { width: 22px; height: 22px; }
+  .tabbar__link.is-active { box-shadow: 0 6px 16px rgba(29, 94, 255, .45); }
 
-  /* fixed background is janky on iOS Safari — let it scroll instead */
-  body { background-attachment: scroll; }
+  /* page content always clears the fixed bar + iPhone home indicator */
+  .main { padding: 12px 12px calc(114px + env(safe-area-inset-bottom, 0px)); }
+}
 
-  .top { gap: 10px; }
-  .main { padding: 12px 12px calc(100px + env(safe-area-inset-bottom, 0px)); }
+/* ---------- 4 · STICKY TOP HEADER (mobile + tablet) ---------- */
+@media (max-width:860px) {
+  .top {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    margin: -12px -12px 14px;                 /* stretch edge-to-edge */
+    padding: 10px 12px;
+    background: rgba(238, 243, 252, .88);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--line);
+  }
+  .top__brand span { font-size: 15px; white-space: nowrap; }
+  .bell, .user { flex: none; }
+}
 
-  /* hero + titles scale down cleanly */
-  .hero { padding: 22px 18px; }
+/* ---------- 5 · Alignment & clumsiness fixes (≤ 860px) ---------- */
+@media (max-width:860px) {
+  .input, .search__input { font-size: 16px; } /* stops iOS auto-zoom on focus */
+  body { background-attachment: scroll; }     /* smooth scrolling on iOS */
+
+  .hero { padding: 22px 18px 26px; min-height: 0; }
   .hero__title { font-size: clamp(22px, 6.4vw, 28px); }
   .hero__sub { font-size: 17px; }
   .page-title { font-size: 20px; }
 
-  /* KPI cards: compact 2-up */
-  .kpis { grid-template-columns: repeat(2, 1fr); gap: 10px; }
-  .kpi { padding: 12px; }
-  .kpi__icon { width: 40px; height: 40px; }
+  /* KPI cards: tidy equal rows, 2-up */
+  .kpis { grid-template-columns: repeat(2, 1fr); gap: 10px; align-items: stretch; }
+  .kpi { padding: 12px; align-items: center; }
+  .kpi__icon { width: 40px; height: 40px; border-radius: 12px; }
   .kpi__value { font-size: 19px; }
 
-  /* coverage chips swipe in one smooth row instead of stacking tall */
-  .filter { flex-wrap: nowrap; overflow-x: auto; margin: 12px 0; padding-bottom: 4px; }
+  /* coverage chips: one smooth swipeable row, snap-aligned */
+  .filter { flex-wrap: nowrap; overflow-x: auto; margin: 12px 0; padding-bottom: 4px; scroll-snap-type: x proximity; }
   .filter__label, .filter .chip { flex: 0 0 auto; white-space: nowrap; }
+  .filter .chip { padding: 9px 16px; scroll-snap-align: start; }
 
   .actions { gap: 10px; }
+  .action span { white-space: nowrap; }
 
-  /* dashboard tools row stacks its controls neatly */
+  /* spotlight card stacks, car image centres below the info */
+  .spot__main { flex-direction: column; align-items: flex-start; }
+  .spot__img { width: min(240px, 70%); margin: 6px auto 0; }
+
+  /* dashboard tools stack cleanly */
   .tools { gap: 10px; }
   .tools .search { max-width: 100% !important; width: 100%; }
   .tools__spacer { margin-left: 0; width: 100%; justify-content: space-between; }
+  .tools__spacer .input--sm { flex: 1; max-width: 62%; }
 
-  /* tabs never squeeze — they swipe if needed */
+  /* tabs share the width evenly — no ragged edges */
   .tabs { flex-wrap: nowrap; overflow-x: auto; }
-  .tab { flex: 0 0 auto; padding: 10px 14px; }
+  .tab { flex: 1 1 0; text-align: center; padding: 11px 6px; white-space: nowrap; }
 
-  /* tables: tighter cells, still swipeable (scrollbar hidden above) */
+  /* tables: tighter cells, swipe with a finger */
   .table { font-size: 12px; }
   .table__th, .table__td { padding: 9px 10px; }
 
-  /* charts center on narrow screens */
   .donut { justify-content: center; }
-
-  /* long emails / IDs can never overflow their card */
   .profile__line { overflow-wrap: anywhere; }
-
-  /* premium box stacks label over value */
   .premium { flex-direction: column; align-items: flex-start; gap: 6px; }
+  .btn { min-height: 48px; }
 
-  /* bottom tab bar clears the iPhone home indicator */
-  .tabbar { padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px)); }
-
-  /* thumb-friendly buttons */
-  .btn { padding: 13px 18px; }
-}
-
-/* ---------- 4 · Small phones (≤ 540px) ---------- */
-@media (max-width:540px) {
-  .card { padding: 14px; }
-  .hero { padding: 20px 16px; }
-  .spot__car { font-size: 21px; }
-  .bars__bar { width: 30px; }
-  .action { padding: 12px; gap: 8px; }
-  .action span { font-size: 13px; }
-
-  /* toast becomes a full-width slab, easier to read */
+  /* toast becomes a full-width slab */
   .toast { left: 12px; right: 12px; transform: translateY(-160%); max-width: none; }
   .toast.is-on { transform: translateY(0); }
 }
 
-/* ---------- 5 · Very small phones (≤ 380px) ---------- */
+/* ---------- 6 · Small phones (≤ 540px) ---------- */
+@media (max-width:540px) {
+  .card { padding: 14px; }
+  .hero { padding: 20px 16px 24px; }
+  .spot__car { font-size: 21px; }
+  .bars__bar { width: 30px; }
+  .action { padding: 12px; gap: 8px; }
+  .action span { font-size: 13px; }
+  .filter__label { width: 100%; margin: 0 0 2px; }  /* label gets its own line */
+}
+
+/* keep KPI cards as clean rows instead of stacked icon-over-text */
+@media (max-width:520px) {
+  .kpi { flex-direction: row; align-items: center; gap: 10px; }
+}
+
+/* ---------- 7 · Very small phones (≤ 380px) ---------- */
 @media (max-width:380px) {
   .kpis { grid-template-columns: 1fr; }
   .actions { grid-template-columns: 1fr; }
-  .filter__label { width: 100%; }
+  .btnrow { flex-direction: column; }
+  .btnrow .btn { width: 100%; }
+}
+
+/* ---------- 8 · Light tablet polish (861–1100px) ---------- */
+@media (min-width:861px) and (max-width:1100px) {
+  .kpi { padding: 12px; }
+  .kpi__value { font-size: 20px; }
+  .hero { padding: 24px; }
+  .hero__title { font-size: 28px; }
 }
