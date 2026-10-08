@@ -195,7 +195,7 @@ a{color:var(--blue);text-decoration:none}
 .splash__logo{object-fit:contain}
 .splash__hint{margin:12px 0 0;font-size:12px;color:#8fa6dd;opacity:0;animation:fadeUp .4s ease 1.3s both}
 .brand__logo{object-fit:contain}
-.hero{background:linear-gradient(100deg,rgba(7,22,66,.92) 0%,rgba(10,30,84,.72) 45%,rgba(10,30,84,.1) 100%),url("assets/hero-banner.jpg") center/cover no-repeat,linear-gradient(100deg,#0b1f55,#12306f 40%,#c2693f 85%,#f5b25d)}
+.hero{background:linear-gradient(100deg,rgba(7,22,66,.92) 0%,rgba(10,30,84,.72) 45%,rgba(10,30,84,.1) 100%),url("images/hero-banner.jpg") center/cover no-repeat,linear-gradient(100deg,#0b1f55,#12306f 40%,#c2693f 85%,#f5b25d)}
 .hero__hello{position:relative;margin:0 0 4px;font-size:13px;font-weight:700;color:#bcd0ff}
 body{background:radial-gradient(1100px 500px at 90% -10%,#dbe7ff,transparent),radial-gradient(900px 500px at -10% 110%,#e3ecff,transparent),repeating-linear-gradient(115deg,rgba(29,94,255,.035) 0 2px,transparent 2px 46px),var(--bg);background-attachment:fixed}
 
