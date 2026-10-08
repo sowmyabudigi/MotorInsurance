@@ -689,8 +689,7 @@
   }
   window.addEventListener('popstate', function () { render(hashName(), true); });
 
-  // Dev helper: run resetIntro() in the console (or localStorage.removeItem('motorInsuranceIntroSeen')) and reload.
-  window.resetIntro = function () { try { localStorage.removeItem(INTRO_KEY); } catch (e) {} location.reload(); };
+
 
   function runIntro(done) {
     var root = document.documentElement, splash = $('splash');
