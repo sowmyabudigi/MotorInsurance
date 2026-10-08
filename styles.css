@@ -270,3 +270,124 @@ body{background:radial-gradient(1100px 500px at 90% -10%,#dbe7ff,transparent),ra
 .loadfail{margin:40px auto;max-width:560px;padding:20px;border-radius:14px;background:#fff;border:1px solid #f3c1c1;color:#b42318;font-family:sans-serif;line-height:1.5}
 .action span{text-align:left}
 @media (max-width:860px){.top{flex-wrap:wrap}.search{order:3;flex:1 1 100%;max-width:none}}
+
+/* =====================================================================
+   APPENDED: HIDDEN SCROLLBARS + MOBILE RESPONSIVENESS FIXES
+   (nothing above this line was changed — all original rules are intact)
+   ===================================================================== */
+
+/* ---------- 1 · Hide every scrollbar (scrolling still works) ---------- */
+*, *::before, *::after {
+  scrollbar-width: none;       /* Firefox */
+  -ms-overflow-style: none;    /* legacy Edge / IE */
+}
+*::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;               /* Chrome / Safari / Edge / Opera */
+}
+
+/* ---------- 2 · Global mobile guards ---------- */
+html, body {
+  overflow-x: hidden;          /* fallback for old browsers */
+  overflow-x: clip;            /* better: does not break position:sticky */
+}
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+button, .chip, .action, .tab, .tabbar__link, .nav__link { touch-action: manipulation; }
+.table-wrap, .tabs, .filter {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+
+/* real (dynamic) viewport height — stops layout jump when mobile URL bar hides */
+@supports (min-height: 100dvh) {
+  .app { min-height: 100dvh; }
+}
+
+/* touch feedback where hover does not exist */
+@media (hover:none) {
+  .chip:active { transform: scale(.96); }
+  .table__row.is-click:active { background: #eef4ff; }
+}
+
+/* ---------- 3 · Phones & small tablets (≤ 860px) ---------- */
+@media (max-width:860px) {
+  /* iOS zooms the whole page when focusing an input smaller than 16px */
+  .input, .search__input { font-size: 16px; }
+
+  /* fixed background is janky on iOS Safari — let it scroll instead */
+  body { background-attachment: scroll; }
+
+  .top { gap: 10px; }
+  .main { padding: 12px 12px calc(100px + env(safe-area-inset-bottom, 0px)); }
+
+  /* hero + titles scale down cleanly */
+  .hero { padding: 22px 18px; }
+  .hero__title { font-size: clamp(22px, 6.4vw, 28px); }
+  .hero__sub { font-size: 17px; }
+  .page-title { font-size: 20px; }
+
+  /* KPI cards: compact 2-up */
+  .kpis { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .kpi { padding: 12px; }
+  .kpi__icon { width: 40px; height: 40px; }
+  .kpi__value { font-size: 19px; }
+
+  /* coverage chips swipe in one smooth row instead of stacking tall */
+  .filter { flex-wrap: nowrap; overflow-x: auto; margin: 12px 0; padding-bottom: 4px; }
+  .filter__label, .filter .chip { flex: 0 0 auto; white-space: nowrap; }
+
+  .actions { gap: 10px; }
+
+  /* dashboard tools row stacks its controls neatly */
+  .tools { gap: 10px; }
+  .tools .search { max-width: 100% !important; width: 100%; }
+  .tools__spacer { margin-left: 0; width: 100%; justify-content: space-between; }
+
+  /* tabs never squeeze — they swipe if needed */
+  .tabs { flex-wrap: nowrap; overflow-x: auto; }
+  .tab { flex: 0 0 auto; padding: 10px 14px; }
+
+  /* tables: tighter cells, still swipeable (scrollbar hidden above) */
+  .table { font-size: 12px; }
+  .table__th, .table__td { padding: 9px 10px; }
+
+  /* charts center on narrow screens */
+  .donut { justify-content: center; }
+
+  /* long emails / IDs can never overflow their card */
+  .profile__line { overflow-wrap: anywhere; }
+
+  /* premium box stacks label over value */
+  .premium { flex-direction: column; align-items: flex-start; gap: 6px; }
+
+  /* bottom tab bar clears the iPhone home indicator */
+  .tabbar { padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px)); }
+
+  /* thumb-friendly buttons */
+  .btn { padding: 13px 18px; }
+}
+
+/* ---------- 4 · Small phones (≤ 540px) ---------- */
+@media (max-width:540px) {
+  .card { padding: 14px; }
+  .hero { padding: 20px 16px; }
+  .spot__car { font-size: 21px; }
+  .bars__bar { width: 30px; }
+  .action { padding: 12px; gap: 8px; }
+  .action span { font-size: 13px; }
+
+  /* toast becomes a full-width slab, easier to read */
+  .toast { left: 12px; right: 12px; transform: translateY(-160%); max-width: none; }
+  .toast.is-on { transform: translateY(0); }
+}
+
+/* ---------- 5 · Very small phones (≤ 380px) ---------- */
+@media (max-width:380px) {
+  .kpis { grid-template-columns: 1fr; }
+  .actions { grid-template-columns: 1fr; }
+  .filter__label { width: 100%; }
+}
