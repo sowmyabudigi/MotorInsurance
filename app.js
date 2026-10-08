@@ -1,7 +1,6 @@
 /* Motor Insurance Desk – app logic (data, store, pages, intro) */
 (function () {
   'use strict';
-  window.__deskReady = true;   // tells the HTML fail-safe that app.js started
 
   var MAKES = {
     'Toyota': ['Corolla', 'Yaris', 'RAV4', 'Hilux'],
@@ -11,8 +10,7 @@
     'Mazda': ['Mazda 2', 'Mazda 3', 'CX-30', 'CX-5'],
     'Chevrolet': ['Aveo', 'Onix', 'Tracker', 'Captiva'],
     'Kia': ['Rio', 'Forte', 'Seltos', 'Sportage'],
-    'Ford': ['Figo', 'Territory', 'Escape', 'Ranger'],
-    'Hyundai': ['i20', 'Creta', 'Venue', 'Verna']
+    'Ford': ['Figo', 'Territory', 'Escape', 'Ranger']
   };
   var CITIES = ['Hyderabad', 'Bengaluru', 'Chennai', 'Mumbai', 'Kochi', 'Delhi'];
   var COVERAGES = ['Comprehensive', 'Limited', 'Third party'];
@@ -20,11 +18,6 @@
   var CLAIM_TYPES = ['Collision', 'Theft', 'Glass', 'Hail', 'Flood', 'Vandalism', 'Fire'];
   var POLICY_STATUS = ['Active', 'Pending', 'Expired', 'Cancelled'];
   var CLAIM_STATUS = ['Open', 'Approved', 'Rejected'];
-
-  /* Real car photos, keyed by "Make Model". Put the files in images/cars/ */
-  var CAR_IMG = { 'Hyundai i20': 'images/cars/hyundai-i20.webp' };
-  var CAR_FALLBACK = 'images/car-sedan.png';
-  function carKey(p) { return p.make + ' ' + p.model; }
 
   /* Chart colours (validated reference palette: categorical slots + fixed status steps) */
   var C = {
@@ -36,7 +29,11 @@
     Active: C.good, Pending: C.warning, Expired: C.neutral, Cancelled: C.critical,
     Open: C.warning, Approved: C.good, Rejected: C.critical
   };
-  var KEY = 'motorDesk.v3';   // bumped so the new featured Hyundai i20 policy is created
+
+  /* ===================================================================
+     STORE (localStorage, wrapped so it never breaks the page)
+     =================================================================== */
+  var KEY = 'motorDesk.v2';
   var db;
 
   var store = {
@@ -62,27 +59,25 @@
       d.customers.push({
         id: cid, name: name,
         phone: '98' + String(Math.floor(r() * 1e8)).padStart(8, '0'),
-        email: name.toLowerCase().split(' ')[0].normalize('NFD').replace(/[\u0300-\u036f]/g, '') + '@example.com',
+        email: name.toLowerCase().split(' ')[0].normalize('NFD').replace(/[̀-ͯ]/g, '') + '@example.com',
         city: pick(r, CITIES)
       });
       var nPol = 1 + Math.floor(r() * 3);
       for (var i = 0; i < nPol; i++) {
-        var feat = (cid === 'C001' && i === 0);   // the featured "your vehicle": a Hyundai i20
-        var make = feat ? 'Hyundai' : pick(r, Object.keys(MAKES));
+        var make = pick(r, Object.keys(MAKES));
         var year = 2014 + Math.floor(r() * 12);
         var value = Math.round((400000 + r() * 1400000) / 1000) * 1000;
         var coverage = r() < 0.55 ? 'Comprehensive' : (r() < 0.6 ? 'Limited' : 'Third party');
-        if (feat) coverage = 'Comprehensive';
-        var start = feat ? addDays(today, -90) : addDays(today, -Math.floor(r() * 540) + 20);
+        var start = addDays(today, -Math.floor(r() * 540) + 20);
         var end = addYears(start, 1);
         var status = start > today ? 'Pending'
           : end < today ? 'Expired'
-          : (!feat && r() < 0.08 ? 'Cancelled' : 'Active');
+          : (r() < 0.08 ? 'Cancelled' : 'Active');
         var pid = 'POL-' + (++d.seq.pol);
         d.policies.push({
-          id: pid, customerId: cid, make: make, model: feat ? 'i20' : pick(r, MAKES[make]), year: feat ? 2022 : year,
+          id: pid, customerId: cid, make: make, model: pick(r, MAKES[make]), year: year,
           plate: plate(r), value: value, coverage: coverage,
-          premium: premium(value, coverage, feat ? 2022 : year), start: iso(start), end: iso(end), status: status
+          premium: premium(value, coverage, year), start: iso(start), end: iso(end), status: status
         });
         // claims during the policy period
         var nClaims = r() < 0.45 ? 0 : 1 + Math.floor(r() * 2);
@@ -153,6 +148,8 @@
   function by(field, value) { return function (x) { return x[field] === value; }; }
 
   var $content = document.getElementById('content');
+  var $band = document.getElementById('section-band');
+  var $bandText = document.getElementById('section-text');
 
   function el(tag, cls, text) { var n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; }
   function slot(name, root) { return (root || $content).querySelector('[data-slot="' + name + '"]'); }
@@ -178,6 +175,35 @@
       select.appendChild(opt);
     });
   }
+  function dataRow(parent, label, value) {
+    var row = el('div', 'pf-data-row');
+    row.appendChild(el('span', 'pf-data-row__label', label));
+    row.appendChild(el('span', null, value));
+    parent.appendChild(row);
+  }
+  function fillTable(tbody, rows, cells, colspan, emptyText) {
+    tbody.textContent = '';
+    if (!rows.length) {
+      var tr = el('tr'), td = el('td', 'pf-msg-empty', emptyText || 'No data found with the selected filter.');
+      td.colSpan = colspan; tr.appendChild(td); tbody.appendChild(tr); return;
+    }
+    rows.forEach(function (row) {
+      var tr = el('tr');
+      cells.forEach(function (c) {
+        var v = c(row);
+        var td = el('td');
+        if (v instanceof Node) td.appendChild(v); else td.textContent = v;
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+  }
+  function link(text, fn) {
+    var a = el('a', null, text);
+    a.href = '#';
+    a.addEventListener('click', function (e) { e.preventDefault(); fn(); });
+    return a;
+  }
 
   /* ===================================================================
      DERIVED DATA
@@ -198,7 +224,7 @@
     return out;
   }
 
-  function setupPolicyForm() {
+    function setupPolicyForm() {
     options($('np-customer'), [{ value: '__new', label: 'New customer' }].concat(
       db.customers.slice().sort(function (a, b) { return a.name.localeCompare(b.name); })
         .map(function (c) { return { value: c.id, label: c.name + ' (' + c.id + ')' }; })));
@@ -311,7 +337,7 @@
     go('customer');
   }
 
-  /* ===================================================================
+    /* ===================================================================
      UI HELPERS
      =================================================================== */
   // Icons are image files: images/icons/<name>.png (dark, transparent). White versions use a CSS filter.
@@ -455,22 +481,18 @@
     var box = slot('spot'), today = startOfDay(new Date());
     var act = pols.filter(by('status', 'Active')).sort(function (a, b) { return a.end.localeCompare(b.end); });
     if (!act.length) { box.innerHTML = '<section class="card reveal spot__wide"><h2 class="card__title">No active policies</h2><p class="helper">There is nothing active for this coverage filter.</p></section>'; return; }
-    // Prefer a vehicle that has a real photo; otherwise the policy that expires first
-    var p = act.filter(function (x) { return CAR_IMG[carKey(x)]; })[0] || act[0];
-    var c = customerOf(p), left = Math.max(0, Math.ceil((fromIso(p.end) - today) / 864e5));
+    var p = act[0], c = customerOf(p), left = Math.max(0, Math.ceil((fromIso(p.end) - today) / 864e5));
     var used = Math.min(100, Math.max(0, Math.round(100 - left / 365 * 100)));
     var open = claimsOfPolicies([p]).filter(by('status', 'Open')).length;
     var health = Math.min(100, 50 + { 'Comprehensive': 25, 'Limited': 15, 'Third party': 8 }[p.coverage] + (open ? 0 : 15) + (left > 60 ? 10 : 0));
     var checks = [[true, p.coverage + ' coverage'], [!open, open ? open + ' open claim(s)' : 'No open claims'], [left > 60, 'Renewal in ' + left + ' days']];
-    var photo = CAR_IMG[carKey(p)] || CAR_FALLBACK;
     box.innerHTML =
       '<section class="card card--lift spot__main reveal" style="--i:3"><div class="spot__text"><p class="spot__hi">You\u2019re covered.</p>' +
       '<h2 class="spot__car">' + esc(p.make + ' ' + p.model + ' ' + p.year) + '</h2><p class="spot__sub">' + p.coverage + ' insurance \u00b7 ' + esc(c.name) + '</p>' +
-      '<div class="spot__meta"><div><span class="spot__k">Policy ID</span>' + p.id + '</div><div><span class="spot__k">Valid until</span>' + dmy(p.end) + '</div><div><span class="spot__k">Plate</span><span class="plate">' + p.plate + '</span></div></div>' +
+      '<div class="spot__meta"><div><span class="spot__k">Policy ID</span>' + p.id + '</div><div><span class="spot__k">Valid until</span>' + dmy(p.end) + '</div><div><span class="spot__k">Plate</span>' + p.plate + '</div></div>' +
       '<div class="spot__bar"><span class="spot__fill" style="--w:' + used + '%"></span></div><p class="spot__sub">Policy term ' + used + '% complete \u00b7 expires in ' + left + ' days</p>' +
-      '<span class="status status--ok">\u2713 Insurance active</span> ' +
       '<button type="button" class="btn btn--primary" id="view-policy">View Policy' + ic('chev', true, 'btn__arrow') + '</button></div>' +
-      '<img class="spot__img" src="' + photo + '" alt="' + esc(p.make + ' ' + p.model) + '" onerror="this.onerror=null;this.src=\'' + CAR_FALLBACK + '\'"></section>' +
+      '<img class="spot__img" src="images/car-sedan.png" alt=""></section>' +
       '<section class="card card--lift reveal" style="--i:4"><h2 class="card__title">Policy health</h2><div class="health">' + ring(health, '#16b364', health + '%', 'Protected') +
       '<ul class="health__list">' + checks.map(function (k) { return '<li class="health__item' + (k[0] ? '' : ' is-warn') + '">' + (k[0] ? '\u2713' : '!') + ' ' + k[1] + '</li>'; }).join('') + '</ul></div></section>';
     on('view-policy', 'click', function () { state.customerId = c.id; go('customer'); });
@@ -722,6 +744,7 @@
     setTimeout(function () { splash.remove(); }, 2300);
   }
 
+  window.__deskReady = true;
   store.load();
   buildChrome();
   runIntro(function () { render(hashName(), true); });
