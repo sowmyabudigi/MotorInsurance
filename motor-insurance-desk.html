@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en" class="intro-on">
+
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -9,56 +10,101 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap">
   <link rel="stylesheet" href="styles.css">
 </head>
-<body>
 
-<!-- ============ SPLASH ============ -->
-<div class="splash" id="splash" aria-hidden="true">
-  <div class="splash__glow splash__glow--a"></div>
-  <div class="splash__glow splash__glow--b"></div>
-  <div class="splash__box">
-    <img class="splash__logo" src="images/logo.png" alt="Motor Insurance Desk logo">
-    <h1 class="splash__name">
-      <span class="splash__word splash__word--1">MOTOR</span>
-      <span class="splash__word splash__word--2">INSURANCE</span>
-      <span class="splash__word splash__word--3">DESK</span>
-    </h1>
-    <p class="splash__sub">Smarter coverage. Safer journeys.</p>
-    <div class="splash__bar"><span class="splash__fill"></span></div>
-    <p class="splash__hint">Preparing your insurance desk...</p>
-  </div>
-</div>
+<body class="page">
 
-<!-- ============ APP ============ -->
-<div class="app" id="app">
-  <aside class="side">
-    <div class="brand"><img class="brand__logo" src="images/logo.png" alt=""><span>Motor Insurance<br>Desk</span></div>
-    <nav class="nav" id="side-nav"></nav>
-    <div class="side__foot" id="side-foot"></div>
-  </aside>
+  <div class="splash" id="splash" aria-hidden="true">
+    <div class="splash__glow splash__glow--a"></div>
+    <div class="splash__glow splash__glow--b"></div>
 
-  <div class="main">
-    <header class="top">
-      <div class="top__brand"><img class="brand__logo" style="width:30px;height:30px" src="images/logo.png" alt=""><span>Motor Insurance Desk</span></div>
-      <label class="search" id="global-search-box"></label>
-      <div class="top__right" id="top-right"></div>
-    </header>
-    <main class="content" id="content"></main>
+    <div class="splash__box">
+      <img class="splash__logo" src="images/logo.png" alt="Motor Insurance Desk logo">
+
+      <h1 class="splash__name">
+        <span class="splash__word splash__word--1">MOTOR</span>
+        <span class="splash__word splash__word--2">INSURANCE</span>
+        <span class="splash__word splash__word--3">DESK</span>
+      </h1>
+
+      <p class="splash__sub">Smarter coverage. Safer journeys.</p>
+
+      <div class="splash__bar">
+        <span class="splash__fill"></span>
+      </div>
+
+      <p class="splash__hint">Preparing your insurance desk...</p>
+    </div>
   </div>
 
-  <nav class="tabbar" id="tabbar"></nav>
-</div>
+  <div class="app" id="app">
 
-<div class="toast" id="toast" role="status"></div>
+    <aside class="side">
+      <div class="brand">
+        <img class="brand__logo" src="images/logo.png" alt="">
+        <span>Motor Insurance<br>Desk</span>
+      </div>
 
-<script src="app.js"></script>
-<script>
-  /* If app.js never started, show a clear message instead of a blank page. */
-  setTimeout(function () {
-    if (window.__deskReady) return;
-    document.documentElement.classList.remove('intro-on');
-    var s = document.getElementById('splash'); if (s) s.remove();
-    document.getElementById('content').innerHTML = '<div class="loadfail"><b>app.js could not be loaded.</b><br>Keep motor-insurance-desk.html, styles.css and app.js in the same folder, with the images folder next to them (images/logo.png, images/icons/...). File names are case-sensitive on GitHub Pages.</div>';
-  }, 3500);
-</script>
+      <nav class="nav" id="side-nav"></nav>
+
+      <div class="side__foot" id="side-foot"></div>
+    </aside>
+
+    <div class="main">
+      <header class="top">
+        <div class="top__brand">
+          <img class="brand__logo top__logo" src="images/logo.png" alt="">
+          <span class="top__name">Motor Insurance Desk</span>
+        </div>
+
+        <label class="search" id="global-search-box"></label>
+
+        <div class="top__right" id="top-right"></div>
+      </header>
+
+      <main class="content" id="content"></main>
+    </div>
+
+    <nav class="tabbar" id="tabbar"></nav>
+  </div>
+
+  <div class="toast" id="toast" role="status"></div>
+
+  <div class="modal" id="modal" aria-hidden="true">
+    <div class="modal__backdrop" id="modal-backdrop"></div>
+
+    <div class="modal__box" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <h2 class="modal__title" id="modal-title"></h2>
+      <div class="modal__body" id="modal-body"></div>
+      <div class="modal__actions" id="modal-actions"></div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+
+  <script>
+    setTimeout(function () {
+      if (window.__deskReady) {
+        return;
+      }
+
+      document.documentElement.classList.remove('intro-on');
+
+      var splash = document.getElementById('splash');
+
+      if (splash) {
+        splash.remove();
+      }
+
+      document.getElementById('content').innerHTML =
+        '<div class="loadfail">' +
+        '<b>app.js could not be loaded.</b><br>' +
+        'Keep motor-insurance-desk.html, styles.css and app.js in the same folder, ' +
+        'with the images folder next to them (images/logo.png, images/icons/...). ' +
+        'File names are case-sensitive on GitHub Pages.' +
+        '</div>';
+    }, 3500);
+  </script>
+
 </body>
+
 </html>
