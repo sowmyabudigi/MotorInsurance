@@ -340,8 +340,8 @@
     /* ===================================================================
      UI HELPERS
      =================================================================== */
-  // Icons are image files: assets/icons/<name>.png (dark, transparent). White versions use a CSS filter.
-  function ic(n, white, cls) { return '<img class="icon' + (white ? ' icon--white' : '') + (cls ? ' ' + cls : '') + '" src="assets/icons/' + n + '.png" alt="">'; }
+  // Icons are image files: images/icons/<name>.png (dark, transparent). White versions use a CSS filter.
+  function ic(n, white, cls) { return '<img class="icon' + (white ? ' icon--white' : '') + (cls ? ' ' + cls : '') + '" src="images/icons/' + n + '.png" alt="">'; }
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function avatar(name, big) {
     var h = 0; for (var i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) % 360;
@@ -492,7 +492,7 @@
       '<div class="spot__meta"><div><span class="spot__k">Policy ID</span>' + p.id + '</div><div><span class="spot__k">Valid until</span>' + dmy(p.end) + '</div><div><span class="spot__k">Plate</span>' + p.plate + '</div></div>' +
       '<div class="spot__bar"><span class="spot__fill" style="--w:' + used + '%"></span></div><p class="spot__sub">Policy term ' + used + '% complete \u00b7 expires in ' + left + ' days</p>' +
       '<button type="button" class="btn btn--primary" id="view-policy">View Policy' + ic('chev', true, 'btn__arrow') + '</button></div>' +
-      '<img class="spot__img" src="assets/car-sedan.png" alt=""></section>' +
+      '<img class="spot__img" src="images/car-sedan.png" alt=""></section>' +
       '<section class="card card--lift reveal" style="--i:4"><h2 class="card__title">Policy health</h2><div class="health">' + ring(health, '#16b364', health + '%', 'Protected') +
       '<ul class="health__list">' + checks.map(function (k) { return '<li class="health__item' + (k[0] ? '' : ' is-warn') + '">' + (k[0] ? '\u2713' : '!') + ' ' + k[1] + '</li>'; }).join('') + '</ul></div></section>';
     on('view-policy', 'click', function () { state.customerId = c.id; go('customer'); });
