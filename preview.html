@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Responsive Preview</title>
+<style>
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html,
+  body {
+    height: 100%;
+    margin: 0;
+  }
+
+  body {
+    display: flex;
+    flex-direction: column;
+    background: #1B1E27;
+    color: #fff;
+    font: 14px/1.4 system-ui, -apple-system, 'Segoe UI', sans-serif;
+  }
+
+  /* hide the real radio/checkbox inputs, labels act as buttons */
+  input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /* ---------- toolbar ---------- */
+  .bar {
+    flex: none;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: #12141A;
+    border-bottom: 1px solid #2B2F3B;
+  }
+
+  .bar strong {
+    margin-right: 12px;
+    font-size: 15px;
+    letter-spacing: -.01em;
+  }
+
+  .bar label {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+    min-width: 92px;
+    padding: 7px 14px;
+    border: 1px solid #2F3342;
+    border-radius: 9px;
+    background: #1B1E27;
+    color: #C9CEDB;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .15s, border-color .15s, color .15s;
+  }
+
+  .bar label small {
+    font-size: 11px;
+    font-weight: 400;
+    color: #8A91A5;
+  }
+
+  .bar label:hover {
+    background: #252936;
+  }
+
+  .bar .spacer {
+    flex: 1;
+  }
+
+  /* selected button */
+  #d-mobile:checked ~ .bar label[for=d-mobile],
+  #d-tablet:checked ~ .bar label[for=d-tablet],
+  #d-laptop:checked ~ .bar label[for=d-laptop],
+  #d-big:checked ~ .bar label[for=d-big],
+  #d-full:checked ~ .bar label[for=d-full],
+  #rot:checked ~ .bar label[for=rot] {
+    border-color: #D9AE45;
+    background: #2A2618;
+    color: #F2D27A;
+  }
+
+  /* keyboard focus */
+  input:focus-visible ~ .bar label {
+    outline-offset: 2px;
+  }
+
+  #d-mobile:focus-visible ~ .bar label[for=d-mobile],
+  #d-tablet:focus-visible ~ .bar label[for=d-tablet],
+  #d-laptop:focus-visible ~ .bar label[for=d-laptop],
+  #d-big:focus-visible ~ .bar label[for=d-big],
+  #d-full:focus-visible ~ .bar label[for=d-full],
+  #rot:focus-visible ~ .bar label[for=rot] {
+    outline: 3px solid #2F6BFF;
+  }
+
+  /* ---------- stage ---------- */
+  .stage {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    display: grid;
+    place-items: start center;
+    padding: 24px;
+
+    /* default device = laptop */
+    --dw: 1366;
+    --dh: 768;
+    --s: .8;
+    --w: var(--dw);
+    --h: var(--dh);
+  }
+
+  #d-mobile:checked ~ .stage {
+    --dw: 390;
+    --dh: 844;
+    --s: 1;
+  }
+
+  #d-tablet:checked ~ .stage {
+    --dw: 820;
+    --dh: 1180;
+    --s: .75;
+  }
+
+  #d-laptop:checked ~ .stage {
+    --dw: 1366;
+    --dh: 768;
+    --s: .8;
+  }
+
+  #d-big:checked ~ .stage {
+    --dw: 1920;
+    --dh: 1080;
+    --s: .55;
+  }
+
+  /* rotate: swap width and height */
+  #rot:checked ~ .stage {
+    --w: var(--dh);
+    --h: var(--dw);
+  }
+
+  .frame {
+    width: calc(var(--w) * var(--s) * 1px);
+    height: calc(var(--h) * var(--s) * 1px);
+    overflow: hidden;
+    border: 8px solid #0A0B0F;
+    border-radius: 18px;
+    background: #fff;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, .5);
+    transition: width .3s ease, height .3s ease;
+  }
+
+  .frame iframe {
+    display: block;
+    width: calc(var(--w) * 1px);
+    height: calc(var(--h) * 1px);
+    border: 0;
+    transform: scale(var(--s));
+    transform-origin: top left;
+  }
+
+  /* "Full" = fill the whole stage, no device frame */
+  #d-full:checked ~ .stage {
+    padding: 0;
+    place-items: stretch;
+  }
+
+  #d-full:checked ~ .stage .frame {
+    width: 100%;
+    height: 100%;
+    border: 0;
+    border-radius: 0;
+  }
+
+  #d-full:checked ~ .stage .frame iframe {
+    width: 100%;
+    height: 100%;
+    transform: none;
+  }
+
+  /* rotate makes no sense in Full mode */
+  #d-full:checked ~ .bar label[for=rot] {
+    opacity: .4;
+    pointer-events: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      transition: none !important;
+    }
+  }
+</style>
+</head>
+
+<body>
+  <input type="radio" name="device" id="d-mobile">
+  <input type="radio" name="device" id="d-tablet">
+  <input type="radio" name="device" id="d-laptop" checked>
+  <input type="radio" name="device" id="d-big">
+  <input type="radio" name="device" id="d-full">
+  <input type="checkbox" id="rot">
+
+  <div class="bar">
+    <strong>Responsive Preview</strong>
+    <label for="d-mobile">Mobile <small>390 × 844</small></label>
+    <label for="d-tablet">Tablet <small>820 × 1180</small></label>
+    <label for="d-laptop">Laptop <small>1366 × 768</small></label>
+    <label for="d-big">Big screen <small>1920 × 1080</small></label>
+    <label for="d-full">Full <small>your window</small></label>
+    <span class="spacer"></span>
+    <label for="rot">Rotate <small>swap W / H</small></label>
+  </div>
+
+  <div class="stage">
+    <div class="frame">
+      <!-- change index.html to the file name of your dashboard -->
+      <iframe src="altrus.html" title="Dashboard preview"></iframe>
+    </div>
+  </div>
+</body>
+</html>
