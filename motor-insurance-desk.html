@@ -52,14 +52,13 @@
 <div class="toast" id="toast" role="status"></div>
 
 <script src="app.js"></script>
-<script src="enhance.js"></script>
 <script>
   /* If app.js never started, show a clear message instead of a blank page. */
   setTimeout(function () {
-    if (window.__deskReady) return;
+    if (window.__deskReady || document.getElementById('side-nav').children.length) return;
     document.documentElement.classList.remove('intro-on');
     var s = document.getElementById('splash'); if (s) s.remove();
-    document.getElementById('content').innerHTML = '<div class="loadfail"><b>app.js could not be loaded.</b><br>Keep motor-insurance-desk.html, styles.css, app.js and enhance.js in the same folder, with the images folder next to them (images/logo.png, images/cars/hyundai-i20.webp, images/icons/...). File names are case-sensitive on GitHub Pages.</div>';
+    document.getElementById('content').innerHTML = '<div class="loadfail"><b>app.js could not be loaded.</b><br>Keep motor-insurance-desk.html, styles.css and app.js in the same folder, with the images folder next to them (images/logo.png, images/cars/hyundai-i20.webp, images/icons/...). File names are case-sensitive on GitHub Pages.</div>';
   }, 3500);
 </script>
 </body>
