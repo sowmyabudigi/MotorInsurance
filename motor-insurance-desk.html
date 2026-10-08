@@ -1,36 +1,22 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="intro-on">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Motor Insurance Desk</title>
-  <script>
-    /* Show the intro only on first visit (or with ?intro in the URL). Reset: localStorage.removeItem('motorInsuranceIntroSeen') */
-    try { if (!localStorage.getItem('motorInsuranceIntroSeen') || /[?&]intro/.test(location.search)) document.documentElement.className = 'intro-on'; } catch (e) {}
-  </script>
+  <link rel="icon" href="assets/logo.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
-<svg width="0" height="0" style="position:absolute" aria-hidden="true">
-  <defs>
-    <linearGradient id="shieldGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5b9bff"/><stop offset="1" stop-color="#1d5eff"/></linearGradient>
-    <symbol id="logo" viewBox="0 0 64 64">
-      <path d="M32 4 8 13v17c0 15 10 26 24 30 14-4 24-15 24-30V13L32 4Z" fill="url(#shieldGrad)"/>
-      <path d="M32 11 14 18v12c0 11 7.5 19.5 18 23 10.500-3.500 18-12 18-23V18L32 11Z" fill="#0a1a44" opacity=".55"/>
-      <path d="m22 33 7 7 14-16" fill="none" stroke="#fff" stroke-width="4.500" stroke-linecap="round" stroke-linejoin="round"/>
-    </symbol>
-  </defs>
-</svg>
-
 <!-- ============ SPLASH ============ -->
 <div class="splash" id="splash" aria-hidden="true">
   <div class="splash__glow splash__glow--a"></div>
   <div class="splash__glow splash__glow--b"></div>
   <div class="splash__box">
-    <svg class="splash__logo"><use href="#logo"/></svg>
+    <img class="splash__logo" src="assets/logo.png" alt="Motor Insurance Desk logo">
     <h1 class="splash__name">
       <span class="splash__word splash__word--1">MOTOR</span>
       <span class="splash__word splash__word--2">INSURANCE</span>
@@ -38,20 +24,21 @@
     </h1>
     <p class="splash__sub">Smarter coverage. Safer journeys.</p>
     <div class="splash__bar"><span class="splash__fill"></span></div>
+    <p class="splash__hint">Preparing your insurance desk...</p>
   </div>
 </div>
 
 <!-- ============ APP ============ -->
 <div class="app" id="app">
   <aside class="side">
-    <div class="brand"><svg class="brand__logo"><use href="#logo"/></svg><span>Motor Insurance<br>Desk</span></div>
+    <div class="brand"><img class="brand__logo" src="assets/logo.png" alt=""><span>Motor Insurance<br>Desk</span></div>
     <nav class="nav" id="side-nav"></nav>
     <div class="side__foot" id="side-foot"></div>
   </aside>
 
   <div class="main">
     <header class="top">
-      <div class="top__brand"><svg class="brand__logo" style="width:30px;height:30px"><use href="#logo"/></svg><span>Motor Insurance Desk</span></div>
+      <div class="top__brand"><img class="brand__logo" style="width:30px;height:30px" src="assets/logo.png" alt=""><span>Motor Insurance Desk</span></div>
       <label class="search" id="global-search-box"></label>
       <div class="top__right" id="top-right"></div>
     </header>
